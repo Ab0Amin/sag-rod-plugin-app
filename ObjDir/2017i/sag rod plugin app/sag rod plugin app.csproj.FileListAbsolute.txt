@@ -1,0 +1,10 @@
+D:\tekla\my plugin\apps before converting\sag rod plugin app\sag rod plugin app\bin\Debug\sag rod plugin app.exe.config
+D:\tekla\my plugin\apps before converting\sag rod plugin app\sag rod plugin app\bin\Debug\sag rod plugin app.exe
+D:\tekla\my plugin\apps before converting\sag rod plugin app\sag rod plugin app\bin\Debug\sag rod plugin app.pdb
+D:\tekla\my plugin\apps before converting\sag rod plugin app\ObjDir\2017i\sag rod plugin app\sag rod plugin app.csprojAssemblyReference.cache
+D:\tekla\my plugin\apps before converting\sag rod plugin app\ObjDir\2017i\sag rod plugin app\sag_rod_plugin_app.Form1.resources
+D:\tekla\my plugin\apps before converting\sag rod plugin app\ObjDir\2017i\sag rod plugin app\sag_rod_plugin_app.Properties.Resources.resources
+D:\tekla\my plugin\apps before converting\sag rod plugin app\ObjDir\2017i\sag rod plugin app\sag rod plugin app.csproj.GenerateResource.cache
+D:\tekla\my plugin\apps before converting\sag rod plugin app\ObjDir\2017i\sag rod plugin app\sag rod plugin app.csproj.CoreCompileInputs.cache
+D:\tekla\my plugin\apps before converting\sag rod plugin app\ObjDir\2017i\sag rod plugin app\sag rod plugin app.exe
+D:\tekla\my plugin\apps before converting\sag rod plugin app\ObjDir\2017i\sag rod plugin app\sag rod plugin app.pdb

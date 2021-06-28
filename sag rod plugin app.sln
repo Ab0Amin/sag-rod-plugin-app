@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sag rod plugin app", "sag rod plugin app\sag rod plugin app.csproj", "{D4CBBE86-CEF1-4CF4-9754-ABC853ACFDBB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D4CBBE86-CEF1-4CF4-9754-ABC853ACFDBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4CBBE86-CEF1-4CF4-9754-ABC853ACFDBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4CBBE86-CEF1-4CF4-9754-ABC853ACFDBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4CBBE86-CEF1-4CF4-9754-ABC853ACFDBB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {15C0F50F-31C0-426C-9C93-79E5F7D238A5}
+	EndGlobalSection
+EndGlobal
