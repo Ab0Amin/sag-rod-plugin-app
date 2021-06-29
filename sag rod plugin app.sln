@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sag rod plugin app", "sag rod plugin app\sag rod plugin app.csproj", "{D4CBBE86-CEF1-4CF4-9754-ABC853ACFDBB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sag Rod", "Sag Rod\Sag Rod.csproj", "{4370E70D-12F1-4F6E-889B-7D8FCA0D2F98}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{D4CBBE86-CEF1-4CF4-9754-ABC853ACFDBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4CBBE86-CEF1-4CF4-9754-ABC853ACFDBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4CBBE86-CEF1-4CF4-9754-ABC853ACFDBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4370E70D-12F1-4F6E-889B-7D8FCA0D2F98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4370E70D-12F1-4F6E-889B-7D8FCA0D2F98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4370E70D-12F1-4F6E-889B-7D8FCA0D2F98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4370E70D-12F1-4F6E-889B-7D8FCA0D2F98}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
