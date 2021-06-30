@@ -89,22 +89,21 @@ public class StructuresData3
 
 }
 
-[Plugin("sag_rod")]
-[PluginUserInterface(sag_rod.UserInterfaceDefinition.Plugin3)]
+[Plugin("Rod_Bracing")]
+[PluginUserInterface(Rod_Bracing.UserInterfaceDefinition.Plugin3)]
 
 
 
 
 
 
-public class sag_rod : PluginBase
+public class Rod_Bracing : PluginBase
 {
-
 
     private readonly StructuresData3 data;
     private readonly Tekla.Structures.Model.Model myModel;
 
-    public sag_rod(StructuresData3 data)
+    public Rod_Bracing(StructuresData3 data)
     {
         this.data = data;
         this.myModel = new Tekla.Structures.Model.Model();
@@ -127,19 +126,23 @@ public class sag_rod : PluginBase
         while (rafter_1.MoveNext())
         {
             Beam b = rafter_1.Current as Beam;
-            if (b != null)
+            Identifier identifier = b.Identifier;
+
+            if (identifier != null)
             {
 
-                r1.Add(b);
+                r1.Add(identifier);
             }
         }
         while (rafter_2.MoveNext())
         {
             Beam b = rafter_2.Current as Beam;
-            if (b != null)
+            Identifier identifier = b.Identifier;
+
+            if (identifier != null)
             {
 
-                r2.Add(b);
+                r2.Add(identifier);
             }
         }
         PluginBase.InputDefinition inputDefinition1 = new PluginBase.InputDefinition(r1 );
@@ -237,7 +240,7 @@ public class sag_rod : PluginBase
             #endregion
 
             //this.createconnection((Part)this.myModel.SelectModelObject((Identifier)Input[0].GetInput()), (Part)this.myModel.SelectModelObject((Identifier)Input[1].GetInput()));
-            this.createconnection(Input[0].GetInput() as ArrayList, Input[1].GetInput() as ArrayList, Input[2].GetInput() as t3d.Point, Input[3].GetInput() as t3d.Point);
+            this.createconnection((ArrayList)Input[0].GetInput() , (ArrayList)Input[1].GetInput() , (t3d.Point)Input[2].GetInput() , (t3d.Point)Input[3].GetInput());
         }
         catch (Exception e)
         {
@@ -247,8 +250,26 @@ public class sag_rod : PluginBase
         return true;
     }
 
-    public void createconnection(ArrayList rafter_1_web, ArrayList rafter_2_web, t3d.Point poinst_1, t3d.Point poinst_2)
+    public void createconnection(ArrayList rafter_1_web_id, ArrayList rafter_2_web_id, t3d.Point poinst_1, t3d.Point poinst_2)
     {
+        ArrayList rafter_1_web = new ArrayList();
+        ArrayList rafter_2_web = new ArrayList();
+        foreach (Identifier ID in rafter_1_web_id)
+        {
+            Part part1 = (Part)this.myModel.SelectModelObject(ID);
+            if (part1 != null)
+            {
+                rafter_1_web.Add(part1);
+            }
+        }
+        foreach (Identifier ID in rafter_2_web_id)
+        {
+            Part part1 = (Part)this.myModel.SelectModelObject(ID);
+            if (part1 != null)
+            {
+                rafter_2_web.Add(part1);
+            }
+        }
 
         double web_1_width = 0;
         double web_2_width = 0;
@@ -268,13 +289,12 @@ public class sag_rod : PluginBase
 
         double dx_Boltedge_sec = 0;
 
-        Position.RotationEnum plateRotation;
 
         Point orgin_1 = web_1.GetCenterLine(false)[0] as t3d.Point;
         web_1.GetReportProperty("HEIGHT", ref web_1_width);
         orgin_1 = orgin_1 - (web_1_width / 2 - data.depth) * -1 * directionY;
 
-        plateRotation = web_1.Position.Rotation;
+        data.plateRotation = web_1.Position.Rotation;
 
         Point orgin_2 = web_2.GetCenterLine(false)[0] as t3d.Point;
         web_2.GetReportProperty("HEIGHT", ref web_2_width);
@@ -466,7 +486,7 @@ public class sag_rod : PluginBase
         //plate2.Delete();
         //plate3.Delete();
         //plate4.Delete();
-        myModel.CommitChanges();
+      //  myModel.CommitChanges();
     }
     public Weld insert_weld_allaround(Part Main_part, Part Secandary_part, double below)
     {
@@ -490,12 +510,13 @@ public class sag_rod : PluginBase
         beam.EndPoint = end_point;
         beam.Profile.ProfileString = data.rod_profile;
         beam.Material.MaterialString = data.rod_material;
-        beam.StartPointOffset.Dx = -150;
-        beam.EndPointOffset.Dx = 150;
-        beam.PartNumber.Prefix = "W";
+        beam.StartPointOffset.Dx = -data.rod_extension;
+        beam.EndPointOffset.Dx = data.rod_extension;
+        beam.PartNumber.Prefix = "L";
         beam.PartNumber.StartNumber = 101;
-        beam.AssemblyNumber.StartNumber = 4001;
-        beam.AssemblyNumber.Prefix = "";
+        beam.AssemblyNumber.StartNumber = data.rod_startNO;
+        beam.AssemblyNumber.Prefix = data.rod_perfix;
+        beam.Name = data.rod_name;
         beam.Position.Depth = Position.DepthEnum.MIDDLE;
         beam.Position.Plane = Position.PlaneEnum.MIDDLE;
         beam.Position.Rotation = Position.RotationEnum.TOP;
@@ -511,26 +532,14 @@ public class sag_rod : PluginBase
         beam.Profile.ProfileString = data.plateProfile;
         beam.Material.MaterialString = data.plateMaterial;
 
-        beam.PartNumber.Prefix = "W";
-        beam.PartNumber.StartNumber = 101;
+        beam.PartNumber.Prefix = data.plate_perfix;
+        beam.PartNumber.StartNumber = data.plate_startNO;
         beam.AssemblyNumber.StartNumber = 4001;
         beam.AssemblyNumber.Prefix = "";
+        beam.Name = data.plate_name;
         beam.Position.Depth = Position.DepthEnum.MIDDLE;
         beam.Position.Plane = Position.PlaneEnum.MIDDLE;
         beam.Position.Rotation = data.plateRotation;
-        beam.Insert();
-        return beam;
-    }
-
-    public Beam check_with_beam(Point start_point, Point end_point)
-    {
-        Beam beam = new Beam();
-        beam.StartPoint = start_point;
-        beam.EndPoint = end_point;
-        beam.Profile.ProfileString = "ROD100";
-        beam.Position.Depth = Position.DepthEnum.FRONT;
-        beam.Position.Plane = Position.PlaneEnum.RIGHT;
-        beam.Position.Rotation = Position.RotationEnum.TOP;
         beam.Insert();
         return beam;
     }
@@ -625,7 +634,7 @@ public class sag_rod : PluginBase
         public const string Plugin1 = @"" +
          @"page(""TeklaStructures"","""")" + "\n" +
           "{\n" +
-          "    plugin(1, sag_rod)\n" +
+          "    plugin(1, Rod_Bracing)\n" +
           "    {\n" +
          @"        tab_page(""Beam test"", ""Parametri_1"", 1)" + "\n" +
           "        {\n" +
@@ -636,7 +645,7 @@ public class sag_rod : PluginBase
 
         public const string Plugin3 =
             "page(\"TeklaStructures\",\"\")\n   " +
-            " {\n    joint(1, sag_rod)\n   " +
+            " {\n    joint(1, Rod_Bracing)\n   " +
 
             " {\n      tab_page(\"1\", \" Picture \", 1)\n   " +
 
@@ -645,211 +654,257 @@ public class sag_rod : PluginBase
 
 
              //plate lables
-             "   attribute(\"\", \"t\", label, \"%s\", none, none, \"0\", \"0\", 197, 9)\n     " +
-            "       attribute(\"\", \"h\", label, \"%s\", none, none, \"0\", \"0\", 329, 9)\n         " +
-            "   attribute(\"\", \"Prefix\", label, \"%s\", none, none, \"0\", \"0\", 464, 9)\n         " +
-            "   attribute(\"\", \"Start_NO\", label, \"%s\", none, none, \"0\", \"0\", 577, 9)\n       " +
-            "     attribute(\"\", \"Matrial\", label, \"%s\", none, none, \"0\", \"0\", 741, 9)\n     " +
-            "       attribute(\"\", \"name\", label, \"%s\", none, none, \"0\", \"0\", 930, 9)\n      " +
+             "   attribute(\"\", \"t\", label, \"%s\", none, none, \"0\", \"0\", 140, 9)\n     " +
+            "       attribute(\"\", \"b\", label, \"%s\", none, none, \"0\", \"0\", 190, 9)\n         " +
+            "   attribute(\"\", \"Prefix\", label, \"%s\", none, none, \"0\", \"0\", 285, 9)\n         " +
+            "   attribute(\"\", \"Start_NO\", label, \"%s\", none, none, \"0\", \"0\", 365, 9)\n       " +
+            "     attribute(\"\", \"Matrial\", label, \"%s\", none, none, \"0\", \"0\", 470, 9)\n     " +
+            "       attribute(\"\", \"name\", label, \"%s\", none, none, \"0\", \"0\", 610, 9)\n      " +
+            
+            "      attribute(\"\", \"Rod Profile\", label, \"%s\", none, none, \"0\", \"0\", 15, 34)\n       " +
+            "      attribute(\"\", \"Plate\", label, \"%s\", none, none, \"0\", \"0\", 15, 75)\n       " +
 
-            "      attribute(\"\", \"Plate\", label, \"%s\", none, none, \"0\", \"0\", 69, 34)\n       " +
-            "      attribute(\"\", \"Stiffener\", label, \"%s\", none, none, \"0\", \"0\", 69, 75)\n       " +
+            //rod prameterss
+            "     parameter(\"\", \"rod_profile\", profile, number, 125, 34, 115)\n         " +
+            "     parameter(\"\", \"rod_perfix\", string, text, 295, 34, 40)\n         " +
+            "   parameter(\"\", \"rod_startNO\", integer, number, 385, 34, 70)\n   " +
+            "         parameter(\"\", \"rod_material\", material, text, 490, 34, 100)\n   " +
+            "         parameter(\"\", \"rod_name\", string, text, 650, 34, 100)\n  " +
 
-            //plate prameterss
-            "     parameter(\"\", \"platethick\", distance, number, 177, 34, 40)\n         " +
-            "   parameter(\"\", \"plateWidth\", distance, number, 290, 34, 70)\n       " +
-            "     parameter(\"\", \"polyBeam_perfix\", string, text, 456, 34, 40)\n         " +
-            "   parameter(\"\", \"polyBeam_startNO\", integer, number, 565, 34, 70)\n   " +
-            "         parameter(\"\", \"polyBeam_material\", material, text, 720, 34, 100)\n   " +
-            "         parameter(\"\", \"polyBeam_name\", string, text, 900, 34, 100)\n  " +
+                  //plate prameterss
+                  "     parameter(\"\", \"plateThik\", distance, number, 125, 75, 40)\n         " +
+                  "     parameter(\"\", \"plateWidth\", distance, number, 205, 75, 50)\n         " +
 
-                  //stiff prameterss
-                  "     parameter(\"\", \"stiffner_thik\", distance, number, 177, 75, 40)\n         " +
+                  "     parameter(\"\", \"plate_perfix\", string, text, 295, 75, 40)\n         " +
+                  "   parameter(\"\", \"plate_startNO\", integer, number, 385, 75, 70)\n   " +
+                  "         parameter(\"\", \"plateMaterial\", material, text, 490, 75, 100)\n   " +
+                  "         parameter(\"\", \"plate_name\", string, text, 650, 75, 100)\n  " +
 
-                  "     parameter(\"\", \"stiff_perfix\", string, text, 456, 75, 40)\n         " +
-                  "   parameter(\"\", \"stiff_sttartNo\", integer, number, 565, 75, 70)\n   " +
-                  "         parameter(\"\", \"stiffner_material\", material, text, 720, 75, 100)\n   " +
-                  "         parameter(\"\", \"stiff_name\", string, text, 900, 75, 100)\n  " +
 
-                  //stiff dimension 
-                  "         parameter(\"\", \"l11\", distance, number, 265, 150, 70)\n   " +
-                  "         parameter(\"\", \"l22\", distance, number, 350, 270, 70)\n  " +
-                       // plate chanfer
-                       "   attribute(\"cb_polybeamChanfer\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 80, 210, 70)\n  " +
+          // pics
+
+          "   picture(\"sagRodPlane\", 0, 0, 104, 132)\n      " +
+          "   picture(\"sagrodElevasion\", 0, 0, 452, 132)\n      " +
+          "   picture(\"sagRodBltEdge\", 0, 0, 372, 371)\n      " +
+
+              // dim
+
+              "         parameter(\"\", \"HzOffset_end\", distance, number, 42, 130, 50)\n  " +
+              "         parameter(\"\", \"HzOffset_start\", distance, number, 42, 270, 50)\n  " +
+              "         parameter(\"\", \"rod_extension\", distance, number, 300, 150, 50)\n  " +
+              "         parameter(\"\", \"depth\", distance, number, 385, 170, 50)\n  " +
+              "         parameter(\"\", \"spacing\", distance, number, 385, 220, 50)\n  " +
+
+              "   attribute(\"cb_sinleordouble\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 390, 270, 100)\n  " +
                   "  {\n     " +
 
-                  "   value(\"arc\", 1)\n      " +
-                  "  value(\"line\", 0)\n  " +
-                  "  value(\"none\", 0)\n  " +
+                  "   value(\"Single\", 1)\n      " +
+                  "  value(\"Double\", 0)\n  " +
                   "  }\n         " +
-                  "         parameter(\"\", \"polyBeam_chanfer_x\", distance, number, 80, 250, 70)\n  " +
-                  "         parameter(\"\", \"polyBeam_chanfer_y\", distance, number, 80, 280, 70)\n  " +
 
-                       // stiff chanfer
-                       "   attribute(\"cb_stiffChanfer\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 370, 155, 70)\n  " +
+
+             //remove plates 
+
+
+             "   attribute(\"removePlate2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 25, 160, 70)\n  " +
                   "  {\n     " +
 
-                  "   value(\"arc\", 0)\n      " +
-                  "  value(\"line\", 1)\n  " +
-                  "  value(\"none\", 0)\n  " +
+                  "   value(\"Plate\", 1)\n      " +
+                  "  value(\"None\", 0)\n  " +
                   "  }\n         " +
-                  "         parameter(\"\", \"stiff_chanfer_x\", distance, number, 370, 195, 70)\n  " +
-                  "         parameter(\"\", \"stiff_chanfer_y\", distance, number, 370, 230, 70)\n  " +
-                  //plate stiff pic
-                  "  picture(\"plate_stiff_anglePlugin_peb\", 0, 0, 185, 155)\n      " +
 
-                  //connection shift
-                  "  picture(\"xs_detail_64_point_def\", 0, 0, 725, 155)\n      " +
-                  "  attribute(\"\", \"Connection shift\", label, \"%s\", none, none, \"0\", \"0\", 545, 260)\n     " +
-                  "  parameter(\"\", \"Connection_shift\", distance, number, 695, 260, 70)\n  " +
+            "   attribute(\"removePlate4\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 25, 300, 70)\n  " +
+                  "  {\n     " +
 
+                  "   value(\"Plate\", 1)\n      " +
+                  "  value(\"None\", 0)\n  " +
+                  "  }\n         " +
 
-             // connection left right
-             //      "   attribute(\"cb_location\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 655, 260, 150)\n  " +
-             //"  {\n     " +
-             //"   value(\"btb_l2.xbm\", 0)\n      " +
-             //"  value(\"btb_l3.xbm\", 1)\n  " +
-             //"  }\n         " +
+            "   attribute(\"removePlate3\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 300, 118, 70)\n  " +
+                  "  {\n     " +
 
-             // primary bolt
+                  "   value(\"Plate\", 1)\n      " +
+                  "  value(\"None\", 0)\n  " +
+                  "  }\n         " +
 
-             //labels
-             "   attribute(\"\", \"Primary Bolts\", label, \"%s\", none, none, \"0\", \"0\", 105, 350)\n     " +
+            "   attribute(\"removePlate1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 290, 290, 70)\n  " +
+                  "  {\n     " +
+
+                  "   value(\"Plate\", 1)\n      " +
+                  "  value(\"None\", 0)\n  " +
+                  "  }\n         " +
+
+             //bolt
              "   attribute(\"\", \"Bolt Standard\", label, \"%s\", none, none, \"0\", \"0\", 40, 380)\n     " +
              "   attribute(\"\", \"Bolt Size\", label, \"%s\", none, none, \"0\", \"0\", 40, 410)\n     " +
              "   attribute(\"\", \"Tolerance\", label, \"%s\", none, none, \"0\", \"0\", 40, 440)\n     " +
-             "   attribute(\"\", \"Workshop/Site\", label, \"%s\", none, none, \"0\", \"0\", 40, 470)\n     " +
-             "   attribute(\"\", \"Washer\", label, \"%s\", none, none, \"0\", \"0\", 40, 510)\n     " +
-             "   attribute(\"\", \"Nut\", label, \"%s\", none, none, \"0\", \"0\", 200, 510)\n     " +
-             "   attribute(\"\", \"X\", label, \"%s\", none, none, \"0\", \"0\", 95, 585)\n     " +
-             "   attribute(\"\", \"Y\", label, \"%s\", none, none, \"0\", \"0\", 185, 585)\n     " +
-             "   attribute(\"\", \"Slot\", label, \"%s\", none, none, \"0\", \"0\", 15, 615)\n     " +
-             "   attribute(\"\", \"Weld Size\", label, \"%s\", none, none, \"0\", \"0\", 270, 650)\n     " +
-             "   attribute(\"\", \"Bolt Shift\", label, \"%s\", none, none, \"0\", \"0\", 175, 720)\n     " +
-
-            // parameters
-            "         parameter(\"\", \"bolt_main_screwdin\", bolt_standard, text, 170, 380, 100)\n  " +
-            "         parameter(\"\", \"bolt_main_diameter\", bolt_size, number, 170,410, 100)\n  " +
-            "         parameter(\"\", \"tolerance_main\", distance, number, 170,440, 100)\n  " +
-            "   attribute(\"cb_workshop_1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 170, 470, 100)\n  " +
-            "  {\n     " +
-            "   value(\"Workshop\", 0)\n      " +
-            "  value(\"Site\", 1)\n  " +
-            "  }\n            " +
-               "   attribute(\"cm_washerNo_1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 30, 550, 100)\n  " +
-            "  {\n     " +
-            "   value(\"1 Washer\", 1)\n      " +
-            "  value(\"2 Washer\", 0)\n  " +
-            "  }\n            " +
-
-                "   attribute(\"cm_nutNo_1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 175, 550, 100)\n  " +
-            "  {\n     " +
-            "   value(\"1 Nut\", 1)\n      " +
-            "  value(\"2 Nut\", 0)\n  " +
-            "  }\n" +
-
-            "         parameter(\"\", \"slotX_1\", distance, number, 75,610, 50)\n  " +
-            "         parameter(\"\", \"slotY_1\", distance, number, 165,610, 50)\n  " +
+             "   attribute(\"\", \"X\", label, \"%s\", none, none, \"0\", \"0\", 120, 470)\n     " +
+             "   attribute(\"\", \"Y\", label, \"%s\", none, none, \"0\", \"0\", 210, 470)\n     " +
+             "   attribute(\"\", \"Slot\", label, \"%s\", none, none, \"0\", \"0\", 40, 495)\n     " +
 
 
-                "   attribute(\"cb_sloted_1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 250, 610, 80)\n  " +
-            "  {\n     " +
-            "   value(\"Plate\", 0)\n      " +
-            "  value(\"Beam\", 0)\n  " +
-            "   value(\"none\", 1)\n      " +
-
-            "  }\n" +
-
-                "   attribute(\"cb_weldedBolt_1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 20, 675, 150)\n  " +
-            "  {\n     " +
-             "   value(\"Beam_to_Beam_Clip1.xbm\", 1)\n      " +
-            "  value(\"Beam_to_Beam_Clip2.xbm\", 0)\n  " +
-            "  }\n" +
-
-            "         parameter(\"\", \"polybeam_weldWithMain\", distance, number, 265,675, 50)\n  " +
-            "         parameter(\"\", \"bolt_shift_1\", distance, number, 265,720, 50)\n  " +
-            //pic
-            "  picture(\"bolt_anglepeb_plugin\", 0, 0, 328, 374)\n      " +
-
-
-             // sec bolt
-
-             //labels
-             "   attribute(\"\", \"Secondary Bolts\", label, \"%s\", none, none, \"0\", \"0\", 670, 350)\n     " +
-             "   attribute(\"\", \"Bolt Standard\", label, \"%s\", none, none, \"0\", \"0\", 625, 380)\n     " +
-             "   attribute(\"\", \"Bolt Size\", label, \"%s\", none, none, \"0\", \"0\", 625, 410)\n     " +
-             "   attribute(\"\", \"Tolerance\", label, \"%s\", none, none, \"0\", \"0\", 625, 440)\n     " +
-             "   attribute(\"\", \"Workshop/Site\", label, \"%s\", none, none, \"0\", \"0\", 625, 470)\n     " +
-             "   attribute(\"\", \"Washer\", label, \"%s\", none, none, \"0\", \"0\", 625, 510)\n     " +
-             "   attribute(\"\", \"Nut\", label, \"%s\", none, none, \"0\", \"0\", 785, 510)\n     " +
-             "   attribute(\"\", \"X\", label, \"%s\", none, none, \"0\", \"0\", 680, 585)\n     " +
-             "   attribute(\"\", \"Y\", label, \"%s\", none, none, \"0\", \"0\", 770, 585)\n     " +
-             "   attribute(\"\", \"Slot\", label, \"%s\", none, none, \"0\", \"0\", 600, 615)\n     " +
-             "   attribute(\"\", \"Weld Size\", label, \"%s\", none, none, \"0\", \"0\", 855, 650)\n     " +
-             "   attribute(\"\", \"Bolt Shift\", label, \"%s\", none, none, \"0\", \"0\", 760, 720)\n     " +
-
-            // parameters
-            "         parameter(\"\", \"bolt_sec_screwdin\", bolt_standard, text, 755, 380, 100)\n  " +
-            "         parameter(\"\", \"bolt_sec_diameter\", bolt_size, number, 755,410, 100)\n  " +
-            "         parameter(\"\", \"tolerance_sec\", distance, number, 755,440, 100)\n  " +
-            "   attribute(\"cb_workshop_2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 755, 470, 100)\n  " +
-            "  {\n     " +
-            "   value(\"Workshop\", 1)\n      " +
-            "  value(\"Site\", 0)\n  " +
-            "  }\n            " +
-               "   attribute(\"cm_washerNo_2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 625, 550, 100)\n  " +
-            "  {\n     " +
-            "   value(\"1 Washer\", 1)\n      " +
-            "  value(\"2 Washer\", 0)\n  " +
-            "  }\n            " +
-
-                "   attribute(\"cm_nutNo_2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 760, 550, 100)\n  " +
-            "  {\n     " +
-            "   value(\"1 Nut\", 1)\n      " +
-            "  value(\"2 Nut\", 0)\n  " +
-            "  }\n" +
-
-            "         parameter(\"\", \"slotX_2\", distance, number, 690,610, 50)\n  " +
-            "         parameter(\"\", \"slotY_2\", distance, number, 770,610, 50)\n  " +
-
-
-                "   attribute(\"cb_solted_2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 860, 610, 80)\n  " +
-            "  {\n     " +
-            "   value(\"Plate\", 0)\n      " +
-            "  value(\"Beam\", 0)\n  " +
-            "  value(\"none\", 1)\n  " +
-            "  }\n" +
-
-                "   attribute(\"cb_weldedBolt_2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 565, 675, 150)\n  " +
-            "  {\n     " +
-            "   value(\"Beam_to_Beam_Clip1.xbm\", 1)\n      " +
-            "  value(\"Beam_to_Beam_Clip3.xbm,\", 0)\n  " +
-            "  }\n" +
-
-            "         parameter(\"\", \"polybeam_weldWithSec\", distance, number, 850,675, 50)\n  " +
-            "         parameter(\"\", \"bolt_shift_2\", distance, number, 850,720, 50)\n  " +
-            //pic
-            "  picture(\"bolt_anglepeb_plugin\", 0, 0, 913, 374)\n      " +
+            "         parameter(\"\", \"bolt_sec_screwdin\", bolt_standard, text, 170, 380, 100)\n  " +
+            "         parameter(\"\", \"bolt_sec_diameter\", bolt_size, number, 170,410, 100)\n  " +
+            "         parameter(\"\", \"tolerance_sec\", distance, number, 170,440, 100)\n  " +
+            "         parameter(\"\", \"slotX_2\", distance, number, 102,495, 50)\n  " +
+            "         parameter(\"\", \"slotY_2\", distance, number, 190,495, 50)\n  " +
+            "         parameter(\"\", \"edge_1\", distance, number, 310,390, 50)\n  " +
 
 
 
-            //bolt numbers and distances
-            //primary
+            //            // plate chanfer
+            //           "   attribute(\"cb_polybeamChanfer\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 80, 210, 70)\n  " +
+            //      "  {\n     " +
 
-            "         parameter(\"\", \"dx_Boltedge_main\", distance, number, 345,345, 70)\n  " +
-            "         parameter(\"\", \"NO_ofBolts_Y_main\", integer, number, 480,445, 50)\n  " +
-            "         parameter(\"\", \"Y_spacing_main\", string, text, 480,475, 100)\n  " +
-            "         parameter(\"\", \"boltEdge2_x_1\", distance, number, 485,545, 70)\n  " +
-            "         parameter(\"\", \"NO_ofBolts_X_main\", integer, number, 405,590, 50)\n  " +
-            "         parameter(\"\", \"X_spacing_main\", string, text, 405,620, 100)\n  " +
+            //      "   value(\"arc\", 1)\n      " +
+            //      "  value(\"line\", 0)\n  " +
+            //      "  value(\"none\", 0)\n  " +
+            //      "  }\n         " +
+            //      "         parameter(\"\", \"polyBeam_chanfer_x\", distance, number, 80, 250, 70)\n  " +
+            //      "         parameter(\"\", \"polyBeam_chanfer_y\", distance, number, 80, 280, 70)\n  " +
 
-            // sec
-            "         parameter(\"\", \"dx_Boltedge_sec\", distance, number, 930,345, 70)\n  " +
-            "         parameter(\"\", \"NO_ofBolts_Y_sec\", integer, number, 1065,445, 50)\n  " +
-            "         parameter(\"\", \"Y_spacing_sec\", string, text, 1065,475, 100)\n  " +
-            "         parameter(\"\", \"boltEdge2_x_2\", distance, number, 1070,545, 70)\n  " +
-            "         parameter(\"\", \"NO_ofBolts_X_sec\", integer, number, 990,590, 50)\n  " +
-            "         parameter(\"\", \"X_spacing_sec\", string, text, 990,620, 100)\n  " +
+            //           // stiff chanfer
+            //           "   attribute(\"cb_stiffChanfer\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 370, 155, 70)\n  " +
+            //      "  {\n     " +
+
+            //      "   value(\"arc\", 0)\n      " +
+            //      "  value(\"line\", 1)\n  " +
+            //      "  value(\"none\", 0)\n  " +
+            //      "  }\n         " +
+            //      "         parameter(\"\", \"stiff_chanfer_x\", distance, number, 370, 195, 70)\n  " +
+            //      "         parameter(\"\", \"stiff_chanfer_y\", distance, number, 370, 230, 70)\n  " +
+            //      //plate stiff pic
+            //      "  picture(\"plate_stiff_anglePlugin_peb\", 0, 0, 185, 155)\n      " +
+
+            //      //connection shift
+            //      "  picture(\"xs_detail_64_point_def\", 0, 0, 725, 155)\n      " +
+            //      "  attribute(\"\", \"Connection shift\", label, \"%s\", none, none, \"0\", \"0\", 545, 260)\n     " +
+            //      "  parameter(\"\", \"Connection_shift\", distance, number, 695, 260, 70)\n  " +
+
+
+
+            // // primary bolt
+
+            // //labels
+            // "   attribute(\"\", \"Primary Bolts\", label, \"%s\", none, none, \"0\", \"0\", 105, 350)\n     " +
+            // "   attribute(\"\", \"Bolt Standard\", label, \"%s\", none, none, \"0\", \"0\", 40, 380)\n     " +
+            // "   attribute(\"\", \"Bolt Size\", label, \"%s\", none, none, \"0\", \"0\", 40, 410)\n     " +
+            // "   attribute(\"\", \"Tolerance\", label, \"%s\", none, none, \"0\", \"0\", 40, 440)\n     " +
+            // "   attribute(\"\", \"Workshop/Site\", label, \"%s\", none, none, \"0\", \"0\", 40, 470)\n     " +
+            // "   attribute(\"\", \"Washer\", label, \"%s\", none, none, \"0\", \"0\", 40, 510)\n     " +
+            // "   attribute(\"\", \"Nut\", label, \"%s\", none, none, \"0\", \"0\", 200, 510)\n     " +
+            // "   attribute(\"\", \"X\", label, \"%s\", none, none, \"0\", \"0\", 95, 585)\n     " +
+            // "   attribute(\"\", \"Y\", label, \"%s\", none, none, \"0\", \"0\", 185, 585)\n     " +
+            // "   attribute(\"\", \"Slot\", label, \"%s\", none, none, \"0\", \"0\", 15, 615)\n     " +
+            // "   attribute(\"\", \"Weld Size\", label, \"%s\", none, none, \"0\", \"0\", 270, 650)\n     " +
+            // "   attribute(\"\", \"Bolt Shift\", label, \"%s\", none, none, \"0\", \"0\", 175, 720)\n     " +
+
+            //// parameters
+            //"         parameter(\"\", \"bolt_main_screwdin\", bolt_standard, text, 170, 380, 100)\n  " +
+            //"         parameter(\"\", \"bolt_main_diameter\", bolt_size, number, 170,410, 100)\n  " +
+            //"         parameter(\"\", \"tolerance_main\", distance, number, 170,440, 100)\n  " +
+            //"   attribute(\"cb_workshop_1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 170, 470, 100)\n  " +
+            //"  {\n     " +
+            //"   value(\"Workshop\", 0)\n      " +
+            //"  value(\"Site\", 1)\n  " +
+            //"  }\n            " +
+            //   "   attribute(\"cm_washerNo_1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 30, 550, 100)\n  " +
+            //"  {\n     " +
+            //"   value(\"1 Washer\", 1)\n      " +
+            //"  value(\"2 Washer\", 0)\n  " +
+            //"  }\n            " +
+
+            //    "   attribute(\"cm_nutNo_1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 175, 550, 100)\n  " +
+            //"  {\n     " +
+            //"   value(\"1 Nut\", 1)\n      " +
+            //"  value(\"2 Nut\", 0)\n  " +
+            //"  }\n" +
+
+            //"         parameter(\"\", \"slotX_1\", distance, number, 75,610, 50)\n  " +
+            //"         parameter(\"\", \"slotY_1\", distance, number, 165,610, 50)\n  " +
+
+
+            //    "   attribute(\"cb_sloted_1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 250, 610, 80)\n  " +
+            //"  {\n     " +
+            //"   value(\"Plate\", 0)\n      " +
+            //"  value(\"Beam\", 0)\n  " +
+            //"   value(\"none\", 1)\n      " +
+
+            //"  }\n" +
+
+            //    "   attribute(\"cb_weldedBolt_1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 20, 675, 150)\n  " +
+            //"  {\n     " +
+            // "   value(\"Beam_to_Beam_Clip1.xbm\", 1)\n      " +
+            //"  value(\"Beam_to_Beam_Clip2.xbm\", 0)\n  " +
+            //"  }\n" +
+
+            //"         parameter(\"\", \"polybeam_weldWithMain\", distance, number, 265,675, 50)\n  " +
+            //"         parameter(\"\", \"bolt_shift_1\", distance, number, 265,720, 50)\n  " +
+            ////pic
+            //"  picture(\"bolt_anglepeb_plugin\", 0, 0, 328, 374)\n      " +
+
+
+            // // sec bolt
+
+            // //labels
+            // "   attribute(\"\", \"Secondary Bolts\", label, \"%s\", none, none, \"0\", \"0\", 670, 350)\n     " +
+            // "   attribute(\"\", \"Bolt Standard\", label, \"%s\", none, none, \"0\", \"0\", 625, 380)\n     " +
+            // "   attribute(\"\", \"Bolt Size\", label, \"%s\", none, none, \"0\", \"0\", 625, 410)\n     " +
+            // "   attribute(\"\", \"Tolerance\", label, \"%s\", none, none, \"0\", \"0\", 625, 440)\n     " +
+            // "   attribute(\"\", \"Workshop/Site\", label, \"%s\", none, none, \"0\", \"0\", 625, 470)\n     " +
+            // "   attribute(\"\", \"Washer\", label, \"%s\", none, none, \"0\", \"0\", 625, 510)\n     " +
+            // "   attribute(\"\", \"Nut\", label, \"%s\", none, none, \"0\", \"0\", 785, 510)\n     " +
+            // "   attribute(\"\", \"X\", label, \"%s\", none, none, \"0\", \"0\", 680, 585)\n     " +
+            // "   attribute(\"\", \"Y\", label, \"%s\", none, none, \"0\", \"0\", 770, 585)\n     " +
+            // "   attribute(\"\", \"Slot\", label, \"%s\", none, none, \"0\", \"0\", 600, 615)\n     " +
+            // "   attribute(\"\", \"Weld Size\", label, \"%s\", none, none, \"0\", \"0\", 855, 650)\n     " +
+            // "   attribute(\"\", \"Bolt Shift\", label, \"%s\", none, none, \"0\", \"0\", 760, 720)\n     " +
+
+            //// parameters
+            //"         parameter(\"\", \"bolt_sec_screwdin\", bolt_standard, text, 755, 380, 100)\n  " +
+            //"         parameter(\"\", \"bolt_sec_diameter\", bolt_size, number, 755,410, 100)\n  " +
+            //"         parameter(\"\", \"tolerance_sec\", distance, number, 755,440, 100)\n  " +
+            //"   attribute(\"cb_workshop_2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 755, 470, 100)\n  " +
+            //"  {\n     " +
+            //"   value(\"Workshop\", 1)\n      " +
+            //"  value(\"Site\", 0)\n  " +
+            //"  }\n            " +
+            //   "   attribute(\"cm_washerNo_2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 625, 550, 100)\n  " +
+            //"  {\n     " +
+            //"   value(\"1 Washer\", 1)\n      " +
+            //"  value(\"2 Washer\", 0)\n  " +
+            //"  }\n            " +
+
+            //    "   attribute(\"cm_nutNo_2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 760, 550, 100)\n  " +
+            //"  {\n     " +
+            //"   value(\"1 Nut\", 1)\n      " +
+            //"  value(\"2 Nut\", 0)\n  " +
+            //"  }\n" +
+
+            //"         parameter(\"\", \"slotX_2\", distance, number, 690,610, 50)\n  " +
+            //"         parameter(\"\", \"slotY_2\", distance, number, 770,610, 50)\n  " +
+
+
+            //    "   attribute(\"cb_solted_2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 860, 610, 80)\n  " +
+            //"  {\n     " +
+            //"   value(\"Plate\", 0)\n      " +
+            //"  value(\"Beam\", 0)\n  " +
+            //"  value(\"none\", 1)\n  " +
+            //"  }\n" +
+
+            //    "   attribute(\"cb_weldedBolt_2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 565, 675, 150)\n  " +
+            //"  {\n     " +
+            //"   value(\"Beam_to_Beam_Clip1.xbm\", 1)\n      " +
+            //"  value(\"Beam_to_Beam_Clip3.xbm,\", 0)\n  " +
+            //"  }\n" +
+
+            //"         parameter(\"\", \"polybeam_weldWithSec\", distance, number, 850,675, 50)\n  " +
+            //"         parameter(\"\", \"bolt_shift_2\", distance, number, 850,720, 50)\n  " +
+            ////pic
+            //"  picture(\"bolt_anglepeb_plugin\", 0, 0, 913, 374)\n      " +
+
+
+
 
 
 

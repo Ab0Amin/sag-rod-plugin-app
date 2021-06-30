@@ -72,7 +72,6 @@ namespace sag_rod_plugin_app
             t3d.Point poinst_1 = inputs.PickPoint() as t3d.Point;
             t3d.Point poinst_2 = inputs.PickPoint() as t3d.Point;
 
-
         
             ArrayList rafter_1_web = new ArrayList();
             ArrayList rafter_2_web = new ArrayList();

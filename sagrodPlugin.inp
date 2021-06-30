@@ -1,0 +1,71 @@
+page("TeklaStructures", "")
+{
+    joint(0, "INPProject")
+    {
+        tab_page("", "Picture", 1)
+        {
+            parameter("", "P11", stud_size, number, 43712, 1, 80)
+            attribute("", "Perfix", label, "%s", none, none, "0", "0", 289, 4)
+            attribute("", "Material", label, "%s", none, none, "0", "0", 470, 5)
+            attribute("", "Name", label, "%s", none, none, "0", "0", 610, 7)
+            attribute("", "Start No", label, "%s", none, none, "0", "0", 366, 8)
+            attribute("", "t", label, "%s", none, none, "0", "0", 141, 9)
+            attribute("", "b", label, "%s", none, none, "0", "0", 189, 9)
+            parameter("", "cleat_name", string, text, 596, 27, 80)
+            parameter("", "cleat_perfix", string, text, 286, 28, 40)
+            parameter("", "cleat_start_no", integer, number, 365, 28, 60)
+            parameter("", "cleat_mat", material, text, 457, 28, 100)
+            parameter("", "cleat_prof", string, text, 124, 30, 115)
+            attribute("", "rod profile", label, "%s", none, none, "0", "0", 22, 34)
+            parameter("", "stiff_thk", distance, number, 122, 63, 30)
+            parameter("", "P38", distance, number, 182, 65, 50)
+            parameter("", "cleat_name", string, text, 592, 67, 80)
+            parameter("", "cleat_perfix", string, text, 282, 68, 40)
+            parameter("", "cleat_start_no", integer, number, 361, 68, 60)
+            parameter("", "cleat_mat", material, text, 456, 68, 100)
+            attribute("", "Stiff.", label, "%s", none, none, "0", "0", 20, 76)
+            picture("shear_ele", 0, 0, 282, 102)
+            picture("sagrodElevasion", 0, 0, 452, 116)
+            attribute("P30", "", option, "%s", none, none, "0.0", "0.0", 300, 118, 70)
+            {
+            }
+            picture("shear_ele", 0, 0, 106, 128)
+            parameter("", "P38", distance, number, 42, 131, 50)
+            picture("sagRodPlane", 0, 0, 104, 132)
+            picture("plateCopes", 0, 0, 150, 151)
+            parameter("", "P38", distance, number, 386, 150, 50)
+            parameter("", "P38", distance, number, 297, 152, 50)
+            attribute("P30", "", option, "%s", none, none, "0.0", "0.0", 28, 161, 70)
+            {
+            }
+            parameter("", "P38", distance, number, 392, 201, 50)
+            attribute("P64", "", option, "%s", none, none, "0.0", "0.0", 360, 240, 80)
+            {
+            }
+            parameter("", "P38", distance, number, 45, 268, 50)
+            attribute("P30", "", option, "%s", none, none, "0.0", "0.0", 292, 288, 70)
+            {
+            }
+            attribute("P30", "", option, "%s", none, none, "0.0", "0.0", 41, 303, 70)
+            {
+            }
+            picture("shear_st", 0, 0, 16, 308)
+            attribute("", "Primary bolts", label, "%s", none, none, "0", "0", 104, 350)
+            picture("sagRodBltEdge", 0, 0, 372, 371)
+            picture("bolt_dim", 0, 0, 328, 374)
+            attribute("", "Bolt standard", label, "%s", none, none, "0", "0", 40, 380)
+            parameter("", "main_screwdin", bolt_standard, text, 170, 380, 80)
+            parameter("", "P34", distance, number, 310, 390, 50)
+            attribute("", "Bolt size", label, "%s", none, none, "0", "0", 40, 410)
+            parameter("", "main_diameter", bolt_size, number, 170, 410, 80)
+            attribute("", "Tolerance", label, "%s", none, none, "0", "0", 40, 440)
+            parameter("", "main_bolt_tole", distance, number, 170, 440, 80)
+            picture("aic_ben", 0, 0, 368, 468)
+            attribute("", "x", label, "%s", none, none, "0", "0", 120, 470)
+            attribute("", "y", label, "%s", none, none, "0", "0", 210, 474)
+            parameter("", "P52", distance, number, 102, 496, 50)
+            parameter("", "P51", distance, number, 192, 496, 50)
+            attribute("", "slot", label, "%s", none, none, "0", "0", 40, 501)
+        }
+    }
+}
