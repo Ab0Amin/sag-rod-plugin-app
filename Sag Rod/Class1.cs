@@ -58,16 +58,20 @@ public class StructuresData3
     public string plateProfile;
     [StructuresField("plateRotation")]
     public Position.RotationEnum plateRotation;
+    [StructuresField("DetetedPlates_F1")]
+    public string DetetedPlates_F1;
+    [StructuresField("DetetedPlates_F2")]
+    public string DetetedPlates_F2;
 
     // remove plates
-    [StructuresField("removePlate1")]
-    public int removePlate1;
-    [StructuresField("removePlate2")]
-    public int removePlate2;
-    [StructuresField("removePlate3")]
-    public int removePlate3;
-    [StructuresField("removePlate4")]
-    public int removePlate4;
+    [StructuresField("removePlate1_f2")]
+    public int removePlate1_f2;
+    [StructuresField("removePlate2_f1")]
+    public int removePlate2_f1;
+    [StructuresField("removePlate2_f2")]
+    public int removePlate2_f2;
+    [StructuresField("removePlate1_f1")]
+    public int removePlate1_f1;
 
     // bolt
     [StructuresField("bolt_sec_screwdin")]
@@ -84,8 +88,10 @@ public class StructuresData3
     public double edge_1;
     [StructuresField("cb_sinleordouble")]
     public int cb_sinleordouble;
+    [StructuresField("spacings")]
+    public string spacings;
 
-   
+    
 
 }
 
@@ -119,8 +125,9 @@ public class Rod_Bracing : PluginBase
         Picker inputs = new Picker();
         ModelObjectEnumerator rafter_1 = inputs.PickObjects(Picker.PickObjectsEnum.PICK_N_PARTS, "Pick webs of first Rafter");
         ModelObjectEnumerator rafter_2 = inputs.PickObjects(Picker.PickObjectsEnum.PICK_N_PARTS, "Pick webs of second Rafter");
-        t3d.Point poinst_1 = inputs.PickPoint() as t3d.Point;
-        t3d.Point poinst_2 = inputs.PickPoint() as t3d.Point;
+
+        ArrayList polygonPoints = inputs.PickPoints(Picker.PickPointEnum.PICK_POLYGON);
+
         ArrayList r1 = new ArrayList();
         ArrayList r2 = new ArrayList();
         while (rafter_1.MoveNext())
@@ -147,12 +154,10 @@ public class Rod_Bracing : PluginBase
         }
         PluginBase.InputDefinition inputDefinition1 = new PluginBase.InputDefinition(r1 );
         PluginBase.InputDefinition inputDefinition2 = new PluginBase.InputDefinition(r2);
-        PluginBase.InputDefinition inputDefinition3 = new PluginBase.InputDefinition(poinst_1);
-        PluginBase.InputDefinition inputDefinition4= new PluginBase.InputDefinition(poinst_2);
+        PluginBase.InputDefinition inputDefinition3 = new PluginBase.InputDefinition(polygonPoints);
         inputDefinitionList.Add(inputDefinition1);
         inputDefinitionList.Add(inputDefinition2);
         inputDefinitionList.Add(inputDefinition3);
-        inputDefinitionList.Add(inputDefinition4);
         return inputDefinitionList;
     }
 
@@ -206,19 +211,21 @@ public class Rod_Bracing : PluginBase
                 this.data.plate_name = "PLATE";
             if (this.IsDefaultValue(this.data.plateProfile))
                 this.data.plateProfile = "PL4*140";
-            //if (this.IsDefaultValue(this.data.plateRotation))
-            //    this.data.plateRotation =Position.RotationEnum.BACK;
+            if (this.IsDefaultValue(this.data.DetetedPlates_F2))
+                this.data.DetetedPlates_F2 = "100";
+            if (this.IsDefaultValue(this.data.DetetedPlates_F1))
+                this.data.DetetedPlates_F1 = "100";
 
             // remove 
-            if (this.IsDefaultValue(this.data.removePlate1))
-                this.data.removePlate1 = 0;
+            if (this.IsDefaultValue(this.data.removePlate1_f2))
+                this.data.removePlate1_f2 = 0;
 
-            if (this.IsDefaultValue(this.data.removePlate2))
-                this.data.removePlate2 = 0;
-            if (this.IsDefaultValue(this.data.removePlate3))
-                this.data.removePlate3 = 0;
-            if (this.IsDefaultValue(this.data.removePlate4))
-                this.data.removePlate4 = 0;
+            if (this.IsDefaultValue(this.data.removePlate2_f1))
+                this.data.removePlate2_f1 = 0;
+            if (this.IsDefaultValue(this.data.removePlate2_f2))
+                this.data.removePlate2_f2 = 0;
+            if (this.IsDefaultValue(this.data.removePlate1_f1))
+                this.data.removePlate1_f1 = 0;
 
             // bolt
             if (this.IsDefaultValue(this.data.bolt_sec_diameter))
@@ -235,12 +242,14 @@ public class Rod_Bracing : PluginBase
                 this.data.edge_1 = 35;
             if (this.IsDefaultValue(this.data.cb_sinleordouble))
                 this.data.cb_sinleordouble = 0;
+            if (this.IsDefaultValue(this.data.spacings))
+                this.data.spacings = "200 50*150";
 
             
             #endregion
 
             //this.createconnection((Part)this.myModel.SelectModelObject((Identifier)Input[0].GetInput()), (Part)this.myModel.SelectModelObject((Identifier)Input[1].GetInput()));
-            this.createconnection((ArrayList)Input[0].GetInput() , (ArrayList)Input[1].GetInput() , (t3d.Point)Input[2].GetInput() , (t3d.Point)Input[3].GetInput());
+            this.createconnection((ArrayList)Input[0].GetInput() , (ArrayList)Input[1].GetInput() , (ArrayList)Input[2].GetInput() );
         }
         catch (Exception e)
         {
@@ -250,7 +259,7 @@ public class Rod_Bracing : PluginBase
         return true;
     }
 
-    public void createconnection(ArrayList rafter_1_web_id, ArrayList rafter_2_web_id, t3d.Point poinst_1, t3d.Point poinst_2)
+    public void createconnection(ArrayList rafter_1_web_id, ArrayList rafter_2_web_id, ArrayList polygonPoints)
     {
         ArrayList rafter_1_web = new ArrayList();
         ArrayList rafter_2_web = new ArrayList();
@@ -270,11 +279,51 @@ public class Rod_Bracing : PluginBase
                 rafter_2_web.Add(part1);
             }
         }
+        List<double> spacing_numbers = listspacing(data.spacings, 10);
+
+        List<double> deletedPlatesF1_L = listspacing(data.DetetedPlates_F1, 10);
+        List<double> deletedPlatesF2_L = listspacing(data.DetetedPlates_F2, 10);
+        double plate_1_f_1 =1;
+        double plate_2_f_1 =2;
+        double plate_1_f_2 = 1;
+        double plate_2_f_2 = 2;
+
 
         double web_1_width = 0;
         double web_2_width = 0;
         Beam web_1 = rafter_1_web[0] as Beam;
         Beam web_2 = rafter_2_web[0] as Beam;
+
+        for (int i = 0; i < rafter_1_web.Count; i++)
+        {
+            Beam web_1_tmp = rafter_1_web[i] as Beam;
+            Beam.BeamTypeEnum web_1_type = web_1_tmp.Type;
+            if (web_1_type == Beam.BeamTypeEnum.BEAM)
+            {
+                web_1 = web_1_tmp;
+                break;
+            }
+
+        }
+        for (int i = 0; i < rafter_2_web.Count; i++)
+        {
+            Beam web_2_tmp = rafter_2_web[i] as Beam;
+            Beam.BeamTypeEnum web_2_type = web_2_tmp.Type;
+            if (web_2_type == Beam.BeamTypeEnum.BEAM)
+            {
+                web_2 = web_2_tmp;
+                break;
+            }
+
+        }
+        if (web_1.Type == Beam.BeamTypeEnum.COLUMN)
+        {
+            for (int i = 0; i < spacing_numbers.Count; i++)
+            {
+                spacing_numbers[i] = spacing_numbers[i] * -1;
+            }
+        }
+
 
         CoordinateSystem coordinate = web_1.GetCoordinateSystem();
         Vector directionX = new Vector(coordinate.AxisX);
@@ -304,189 +353,234 @@ public class Rod_Bracing : PluginBase
         GeometricPlane HZplane1 = new GeometricPlane(orgin_1, directionX, directionX.Cross(directionY));
         GeometricPlane vlPlane1 = new GeometricPlane(orgin_1, directionX, (directionY));
         GeometricPlane vlPlane2 = new GeometricPlane(orgin_2, directionX, (directionY));
+        int counter = 0;
 
+        for (int l = 0; l < polygonPoints.Count - 1; l++) {
 
-        t3d.Point projected_point_1 = Projection.PointToPlane(poinst_1, HZplane1);
-        t3d.Point projected_point_2 = Projection.PointToPlane(poinst_2, HZplane1);
-
-        projected_point_1 = projected_point_1 + directionX * data.HzOffset_start;
-        projected_point_2 = projected_point_2 - directionX * data.HzOffset_end;
-
-        t3d.Point rod_1_point1 = Projection.PointToPlane(projected_point_1, vlPlane1);
-        t3d.Point rod_2_point1 = Projection.PointToPlane(projected_point_2, vlPlane1);
-
-        t3d.Point rod_2_point2 = Projection.PointToPlane(projected_point_1, vlPlane2);
-        t3d.Point rod_1_point2 = Projection.PointToPlane(projected_point_2, vlPlane2);
-
-        Beam rod1 = insertRod(rod_1_point1, rod_1_point2);
-        Beam rod2 = insertRod(rod_2_point1, rod_2_point2);
-
-        t3d.Point Plate_1_Point1 = rod_1_point1 - data.plateWidth / 2 * directionX;
-
-        t3d.Point Plate_2_Point1 = rod_1_point2 - data.plateWidth / 2 * directionX;
-
-        t3d.Point Plate_3_Point1 = rod_2_point1 - data.plateWidth / 2 * directionX;
-
-        t3d.Point Plate_4_Point1 = rod_2_point2 - data.plateWidth / 2 * directionX;
-
-
-        double plateLength = 70;
-
-        int NO_ofBolts_Y_sec = 1;
-        double bolt_shift_2 = 0;
-        int NO_ofBolts_X_sec = 1;
-        dx_Boltedge_sec = data.plateWidth / 2;
-
-        if (data.cb_sinleordouble == 0)
-        {
-            data.spacing = 0;
-        }
-        else
-        {
-            Beam rod3 = insertRod(rod_1_point1 - data.spacing * directionY, rod_1_point2 - data.spacing * directionY);
-            Beam rod4 = insertRod(rod_2_point1 - data.spacing * directionY, rod_2_point2 - data.spacing * directionY);
-
-            NO_ofBolts_Y_sec = 2;
-
-
-            Plate_1_Point1 = Plate_1_Point1 - data.spacing / 2 * directionY;
-
-            Plate_2_Point1 = Plate_2_Point1 - data.spacing / 2 * directionY;
-
-            Plate_3_Point1 = Plate_3_Point1 - data.spacing / 2 * directionY;
-
-            Plate_4_Point1 = Plate_4_Point1 - data.spacing / 2 * directionY;
-
-
-        }
-
-        plateLength = data.edge_1 + data.edge_1 + data.spacing;
-        data.plateProfile = "PL" + data.plateThik + "*" + plateLength;
-
-        t3d.Point Plate_1_Point2 = Plate_1_Point1 + data.plateWidth * directionX;
-
-        t3d.Point Plate_2_Point2 = Plate_2_Point1 + data.plateWidth * directionX;
-
-        t3d.Point Plate_3_Point2 = Plate_3_Point1 + data.plateWidth * directionX;
-
-        t3d.Point Plate_4_Point2 = Plate_4_Point1 + data.plateWidth * directionX;
-
-        Beam plate1 = insertPlate(Plate_1_Point1, Plate_1_Point2);
-        Beam plate2 = insertPlate(Plate_2_Point1, Plate_2_Point2);
-        Beam plate3 = insertPlate(Plate_3_Point1, Plate_3_Point2);
-        Beam plate4 = insertPlate(Plate_4_Point1, Plate_4_Point2);
-
-        Beam holeWeb_1 = null, holeWeb_2 = null, holeWeb_3 = null, holeWeb_4 = null;
-        LineSegment line_1 = new LineSegment(rod_1_point1, rod_1_point2);
-        LineSegment line_2 = new LineSegment(rod_2_point1, rod_2_point2);
-
-        for (int i = 0; i < rafter_1_web.Count; i++)
-        {
-            Beam current = rafter_1_web[i] as Beam;
-            Solid solid = current.GetSolid();
-            ArrayList p1 = solid.Intersect(line_1);
-            ArrayList p2 = solid.Intersect(line_2);
-            if (p1.Count > 0)
+            t3d.Point poinst_1 = polygonPoints[l] as t3d.Point;
+            t3d.Point poinst_2 = polygonPoints[l + 1] as t3d.Point;
+            if (counter > spacing_numbers.Count-2)
             {
-                holeWeb_1 = current;
+                data.HzOffset_start = spacing_numbers[spacing_numbers.Count-1];
+                data.HzOffset_end = spacing_numbers[spacing_numbers.Count - 1];
+
             }
-            if (p2.Count > 0)
+            else
             {
-                holeWeb_2 = current;
-            }
-        }
-        for (int i = 0; i < rafter_2_web.Count; i++)
-        {
-            Beam current = rafter_2_web[i] as Beam;
-            Solid solid = current.GetSolid();
+                data.HzOffset_start = spacing_numbers[counter];
+                data.HzOffset_end = spacing_numbers[counter + 1];
 
-            ArrayList p1 = solid.Intersect(line_1);
-            ArrayList p2 = solid.Intersect(line_2);
-            if (p1.Count > 0)
+            }
+            counter += 2;
+            t3d.Point projected_point_1 = Projection.PointToPlane(poinst_1, HZplane1);
+            t3d.Point projected_point_2 = Projection.PointToPlane(poinst_2, HZplane1);
+
+            projected_point_1 = projected_point_1 + directionX * data.HzOffset_start;
+            projected_point_2 = projected_point_2 - directionX * data.HzOffset_end;
+
+            t3d.Point rod_1_point1 = Projection.PointToPlane(projected_point_1, vlPlane1);
+            t3d.Point rod_2_point1 = Projection.PointToPlane(projected_point_2, vlPlane1);
+
+            t3d.Point rod_2_point2 = Projection.PointToPlane(projected_point_1, vlPlane2);
+            t3d.Point rod_1_point2 = Projection.PointToPlane(projected_point_2, vlPlane2);
+
+            Beam rod1 = insertRod(rod_1_point1, rod_1_point2);
+            Beam rod2 = insertRod(rod_2_point1, rod_2_point2);
+
+            t3d.Point Plate_1_Point1 = rod_1_point1 - data.plateWidth / 2 * directionX;
+
+            t3d.Point Plate_2_Point1 = rod_1_point2 - data.plateWidth / 2 * directionX;
+
+            t3d.Point Plate_3_Point1 = rod_2_point1 - data.plateWidth / 2 * directionX;
+
+            t3d.Point Plate_4_Point1 = rod_2_point2 - data.plateWidth / 2 * directionX;
+
+
+            double plateLength = 70;
+
+            int NO_ofBolts_Y_sec = 1;
+            double bolt_shift_2 = 0;
+            int NO_ofBolts_X_sec = 1;
+            dx_Boltedge_sec = data.plateWidth / 2;
+
+            if (data.cb_sinleordouble == 0)
             {
-                holeWeb_3 = current;
+                data.spacing = 0;
             }
-            if (p2.Count > 0)
+            else
             {
-                holeWeb_4 = current;
+                Beam rod3 = insertRod(rod_1_point1 - data.spacing * directionY, rod_1_point2 - data.spacing * directionY);
+                Beam rod4 = insertRod(rod_2_point1 - data.spacing * directionY, rod_2_point2 - data.spacing * directionY);
+
+                NO_ofBolts_Y_sec = 2;
+
+
+                Plate_1_Point1 = Plate_1_Point1 - data.spacing / 2 * directionY;
+
+                Plate_2_Point1 = Plate_2_Point1 - data.spacing / 2 * directionY;
+
+                Plate_3_Point1 = Plate_3_Point1 - data.spacing / 2 * directionY;
+
+                Plate_4_Point1 = Plate_4_Point1 - data.spacing / 2 * directionY;
+
+
             }
-        }
-        List<double> Sx_sec = new List<double>();
-        Sx_sec.Add(0);
-        List<double> Sy_sec = new List<double>();
-        Sy_sec.Add(data.spacing);
+
+            plateLength = data.edge_1 + data.edge_1 + data.spacing;
+            data.plateProfile = "PL" + data.plateThik + "*" + plateLength;
+
+            t3d.Point Plate_1_Point2 = Plate_1_Point1 + data.plateWidth * directionX;
+
+            t3d.Point Plate_2_Point2 = Plate_2_Point1 + data.plateWidth * directionX;
+
+            t3d.Point Plate_3_Point2 = Plate_3_Point1 + data.plateWidth * directionX;
+
+            t3d.Point Plate_4_Point2 = Plate_4_Point1 + data.plateWidth * directionX;
+
+            Beam plate1 = insertPlate(Plate_1_Point1, Plate_1_Point2);
+            Beam plate2 = insertPlate(Plate_2_Point1, Plate_2_Point2);
+            Beam plate3 = insertPlate(Plate_3_Point1, Plate_3_Point2);
+            Beam plate4 = insertPlate(Plate_4_Point1, Plate_4_Point2);
+
+            Beam holeWeb_1 = null, holeWeb_2 = null, holeWeb_3 = null, holeWeb_4 = null;
+            LineSegment line_1 = new LineSegment(rod_1_point1, rod_1_point2);
+            LineSegment line_2 = new LineSegment(rod_2_point1, rod_2_point2);
+
+            for (int i = 0; i < rafter_1_web.Count; i++)
+            {
+                Beam current = rafter_1_web[i] as Beam;
+                Solid solid = current.GetSolid();
+                ArrayList p1 = solid.Intersect(line_1);
+                ArrayList p2 = solid.Intersect(line_2);
+                if (p1.Count > 0)
+                {
+                    holeWeb_1 = current;
+                }
+                if (p2.Count > 0)
+                {
+                    holeWeb_2 = current;
+                }
+            }
+            for (int i = 0; i < rafter_2_web.Count; i++)
+            {
+                Beam current = rafter_2_web[i] as Beam;
+                Solid solid = current.GetSolid();
+
+                ArrayList p1 = solid.Intersect(line_1);
+                ArrayList p2 = solid.Intersect(line_2);
+                if (p1.Count > 0)
+                {
+                    holeWeb_3 = current;
+                }
+                if (p2.Count > 0)
+                {
+                    holeWeb_4 = current;
+                }
+            }
+            List<double> Sx_sec = new List<double>();
+            Sx_sec.Add(0);
+            List<double> Sy_sec = new List<double>();
+            Sy_sec.Add(data.spacing);
 
 
 
 
 
-        BoltArray bolt1_plate = InsertBolt(Plate_1_Point1, Plate_1_Point2, plate1, plate1, dx_Boltedge_sec, data.bolt_sec_diameter,
-                          data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
-                          , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
-          );
+            BoltArray bolt1_plate = InsertBolt(Plate_1_Point1, Plate_1_Point2, plate1, plate1, dx_Boltedge_sec, data.bolt_sec_diameter,
+                              data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
+                              , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
+              );
 
 
-        BoltArray bolt2_plate = InsertBolt(Plate_2_Point1, Plate_2_Point2, plate2, plate2, dx_Boltedge_sec, data.bolt_sec_diameter,
-                    data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
-                     , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
-     );
-
-        BoltArray bolt3_plate = InsertBolt(Plate_3_Point1, Plate_3_Point2, plate3, plate3, dx_Boltedge_sec, data.bolt_sec_diameter,
-                data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
-                , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
-);
-
-        BoltArray bolt4_plate = InsertBolt(Plate_4_Point1, Plate_4_Point2, plate4, plate4, dx_Boltedge_sec, data.bolt_sec_diameter,
-                data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
-                , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
-);
-
-
-        BoltArray bolt1_web = InsertBolt(Plate_1_Point1, Plate_1_Point2, holeWeb_1, holeWeb_1, dx_Boltedge_sec, data.bolt_sec_diameter,
+            BoltArray bolt2_plate = InsertBolt(Plate_2_Point1, Plate_2_Point2, plate2, plate2, dx_Boltedge_sec, data.bolt_sec_diameter,
                         data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
                          , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
          );
 
+            BoltArray bolt3_plate = InsertBolt(Plate_3_Point1, Plate_3_Point2, plate3, plate3, dx_Boltedge_sec, data.bolt_sec_diameter,
+                    data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
+                    , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
+    );
 
-        BoltArray bolt2_web = InsertBolt(Plate_2_Point1, Plate_2_Point2, holeWeb_3, holeWeb_3, dx_Boltedge_sec, data.bolt_sec_diameter,
-                      data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
-                       , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
-       );
+            BoltArray bolt4_plate = InsertBolt(Plate_4_Point1, Plate_4_Point2, plate4, plate4, dx_Boltedge_sec, data.bolt_sec_diameter,
+                    data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
+                    , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
+    );
 
-        BoltArray bolt3_web = InsertBolt(Plate_3_Point1, Plate_3_Point2, holeWeb_2, holeWeb_2, dx_Boltedge_sec, data.bolt_sec_diameter,
-                      data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
-                       , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
-       );
 
-        BoltArray bolt4_web = InsertBolt(Plate_4_Point1, Plate_4_Point2, holeWeb_4, holeWeb_4, dx_Boltedge_sec, data.bolt_sec_diameter,
-                       data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
-                       , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
-       );
-        insert_weld_allaround(holeWeb_3, plate2, 4);
-        insert_weld_allaround(holeWeb_1, plate1, 4);
-        insert_weld_allaround(holeWeb_2, plate3, 4);
-        insert_weld_allaround(holeWeb_4, plate4, 4);
-        if (data.removePlate1 == 1)
-        {
-            plate1.Delete();
+            BoltArray bolt1_web = InsertBolt(Plate_1_Point1, Plate_1_Point2, holeWeb_1, holeWeb_1, dx_Boltedge_sec, data.bolt_sec_diameter,
+                            data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
+                             , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
+             );
+
+
+            BoltArray bolt2_web = InsertBolt(Plate_2_Point1, Plate_2_Point2, holeWeb_3, holeWeb_3, dx_Boltedge_sec, data.bolt_sec_diameter,
+                          data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
+                           , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
+           );
+
+            BoltArray bolt3_web = InsertBolt(Plate_3_Point1, Plate_3_Point2, holeWeb_2, holeWeb_2, dx_Boltedge_sec, data.bolt_sec_diameter,
+                          data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
+                           , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
+           );
+
+            BoltArray bolt4_web = InsertBolt(Plate_4_Point1, Plate_4_Point2, holeWeb_4, holeWeb_4, dx_Boltedge_sec, data.bolt_sec_diameter,
+                           data.tolerance_sec, data.bolt_sec_screwdin, NO_ofBolts_X_sec, NO_ofBolts_Y_sec, "", data.spacing.ToString()
+                           , BoltGroup.BoltTypeEnum.BOLT_TYPE_SITE, true, true, data.slotX_2, data.slotY_2, false, false, bolt_shift_2, Sx_sec, Sy_sec
+           );
+            insert_weld_allaround(holeWeb_3, plate2, 4);
+            insert_weld_allaround(holeWeb_1, plate1, 4);
+            insert_weld_allaround(holeWeb_2, plate3, 4);
+            insert_weld_allaround(holeWeb_4, plate4, 4);
+            if (data.removePlate1_f2 == 1)
+            {
+                plate1.Delete();
+            }
+            else if (data.removePlate1_f2 == 2 && deletedPlatesF2_L.Contains(plate_1_f_2))
+            {
+                plate1.Delete();
+
+            }
+            if (data.removePlate1_f1 == 1)
+            {
+                plate2.Delete();
+            }
+            else if (data.removePlate1_f1 == 2 && deletedPlatesF1_L.Contains(plate_2_f_1))
+            {
+                plate2.Delete();
+
+            }
+            if (data.removePlate1_f2 == 1)
+            {
+                plate3.Delete();
+            }
+            else if (data.removePlate1_f2 == 2 && deletedPlatesF2_L.Contains(plate_2_f_2))
+            {
+                plate3.Delete();
+
+            }
+            if (data.removePlate1_f1 == 1)
+            {
+                plate4.Delete();
+            }
+            else if (data.removePlate1_f1 == 2 && deletedPlatesF1_L.Contains(plate_1_f_1))
+            {
+                plate4.Delete();
+
+            }
+            plate_1_f_1 += 2;
+            plate_2_f_1 += 2;
+            plate_1_f_2 += 2;
+            plate_2_f_2 += 2;
+            
         }
-        if (data.removePlate2 == 1)
-        {
-            plate2.Delete();
-        }
-        if (data.removePlate3 == 1)
-        {
-            plate3.Delete();
-        }
-        if (data.removePlate4 == 1)
-        {
-            plate4.Delete();
-        }
+        
+
         //plate1.Delete();
         //plate2.Delete();
         //plate3.Delete();
         //plate4.Delete();
-      //  myModel.CommitChanges();
+        //  myModel.CommitChanges();
     }
     public Weld insert_weld_allaround(Part Main_part, Part Secandary_part, double below)
     {
@@ -542,6 +636,48 @@ public class Rod_Bracing : PluginBase
         beam.Position.Rotation = data.plateRotation;
         beam.Insert();
         return beam;
+    }
+    private List<double> listspacing(string spacings, int N)
+    {
+        List<double> spacing = new List<double>();
+        spacings = spacings.Trim();
+        if (N != 1)
+        {
+            if (spacings.Contains(" ") || spacings.Contains("*"))
+            {
+                string[] array = spacings.Split(' ');
+                for (int i = 0; i < array.Length; i++)
+                {
+                    string text = array[i];
+                    if (!text.Contains('*'))
+                    {
+                        spacing.Add(Convert.ToDouble(text));
+                    }
+                    if (text.Contains('*'))
+                    {
+                        string[] array2 = text.Split('*');
+                        int num = int.Parse(array2[0]);
+                        for (int j = 0; j < num; j++)
+                        {
+                            spacing.Add(Convert.ToDouble(array2[1]));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < N - 1; i++)
+                {
+                    spacing.Add(Convert.ToDouble(spacings));
+                }
+            }
+        }
+        else
+        {
+            spacing.Add(Convert.ToDouble(spacings));
+        }
+
+        return spacing;
     }
 
     private BoltArray InsertBolt(Point platePoint1, Point plateMidPoint, Part mainPart, Part plate, double dx, double boltSize,
@@ -683,19 +819,23 @@ public class Rod_Bracing : PluginBase
 
           // pics
 
-          "   picture(\"sagRodPlane\", 0, 0, 104, 132)\n      " +
-          "   picture(\"sagrodElevasion\", 0, 0, 452, 132)\n      " +
+          "   picture(\"sagRodPlane\", 0, 0, 155, 132)\n      " +
+          "   picture(\"sagrodElevasion\", 0, 0, 552, 132)\n      " +
           "   picture(\"sagRodBltEdge\", 0, 0, 372, 371)\n      " +
 
               // dim
 
-              "         parameter(\"\", \"HzOffset_end\", distance, number, 42, 130, 50)\n  " +
-              "         parameter(\"\", \"HzOffset_start\", distance, number, 42, 270, 50)\n  " +
-              "         parameter(\"\", \"rod_extension\", distance, number, 300, 150, 50)\n  " +
-              "         parameter(\"\", \"depth\", distance, number, 385, 170, 50)\n  " +
-              "         parameter(\"\", \"spacing\", distance, number, 385, 220, 50)\n  " +
+              //"         parameter(\"\", \"HzOffset_end\", distance, number, 42, 130, 50)\n  " +
+              "         parameter(\"\", \"spacings\", string, text, 110, 320, 150)\n  " +
+            "      attribute(\"\", \"Spacings\", label, \"%s\", none, none, \"0\", \"0\", 5, 320)\n       " +
 
-              "   attribute(\"cb_sinleordouble\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 390, 270, 100)\n  " +
+            "         parameter(\"\", \"rod_extension\", distance, number, 350, 150, 50)\n  " +
+              "         parameter(\"\", \"depth\", distance, number, 485, 170, 50)\n  " +
+            
+            "         parameter(\"\", \"spacing\", distance, number, 485, 220, 50)\n  " +
+
+
+              "   attribute(\"cb_sinleordouble\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 485, 280, 100)\n  " +
                   "  {\n     " +
 
                   "   value(\"Single\", 1)\n      " +
@@ -703,36 +843,61 @@ public class Rod_Bracing : PluginBase
                   "  }\n         " +
 
 
-             //remove plates 
+               //remove plates 
 
 
-             "   attribute(\"removePlate2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 25, 160, 70)\n  " +
-                  "  {\n     " +
+               //"   attribute(\"removePlate2_f1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 25, 160, 70)\n  " +
+               //     "  {\n     " +
 
-                  "   value(\"Plate\", 1)\n      " +
-                  "  value(\"None\", 0)\n  " +
-                  "  }\n         " +
+               //     "   value(\"Plate\", 1)\n      " +
+               //     "  value(\"None\", 0)\n  " +
+               //     "  }\n         " +
 
-            "   attribute(\"removePlate4\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 25, 300, 70)\n  " +
-                  "  {\n     " +
 
-                  "   value(\"Plate\", 1)\n      " +
-                  "  value(\"None\", 0)\n  " +
-                  "  }\n         " +
+               @"            attribute(""removePlate1_f1"", """", option, ""%s"", none, none, ""0.0"", ""0.0"", 25, 200, 100,""toggle_field:DetetedPlates_F1=1,0;"")" + "\n" +
+                    "            {\n" +
+                    @"                value(""Plate"", 1)" + "\n" +
+                    @"                value(""None"", 0)" + "\n" +
+                    @"                value(""Delete NO"", 0)" + "\n" +
+                    "            }\n" +
 
-            "   attribute(\"removePlate3\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 300, 118, 70)\n  " +
-                  "  {\n     " +
+            //"   attribute(\"removePlate1_f1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 25, 200, 100,\"toggle_field:DetetedPlates_F1=1,0;\")\n  " +
+            //      "  {\n     " +
 
-                  "   value(\"Plate\", 1)\n      " +
-                  "  value(\"None\", 0)\n  " +
-                  "  }\n         " +
+            //      "   value(\"Plate\", 1)\n      " +
+            //      "  value(\"None\", 0)\n  " +
+            //      "  value(\"Delete NO\", 0)\n  " +
+            //      "  }\n         " +
 
-            "   attribute(\"removePlate1\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 290, 290, 70)\n  " +
-                  "  {\n     " +
 
-                  "   value(\"Plate\", 1)\n      " +
-                  "  value(\"None\", 0)\n  " +
-                  "  }\n         " +
+            "         parameter(\"\", \"DetetedPlates_F1\", string, text, 25, 240, 100)\n  " +
+
+
+                //"   attribute(\"removePlate2_f2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 300, 118, 70)\n  " +
+                //      "  {\n     " +
+
+                //      "   value(\"Plate\", 1)\n      " +
+                //      "  value(\"None\", 0)\n  " +
+                //      "  }\n         " +
+
+
+                @"            attribute(""removePlate1_f2"", """", option, ""%s"", none, none, ""0.0"", ""0.0"", 340, 200, 100,""toggle_field:DetetedPlates_F2=1,0;"")" + "\n" +
+                    "            {\n" +
+                    @"                value(""Plate"", 1)" + "\n" +
+                    @"                value(""None"", 0)" + "\n" +
+                    @"                value(""Delete NO"", 0)" + "\n" +
+                    "            }\n" +
+
+            //"   attribute(\"removePlate1_f2\", \"\", option, \"%s\", none, none, \"0.0\", \"0.0\", 340, 200, 100\"toggle_field:DetetedPlates_F2=1,0;\")\n  " +
+            //      "  {\n     " +
+
+            //      "   value(\"Plate\", 1)\n      " +
+            //      "  value(\"None\", 0)\n  " +
+            //      "  value(\"Delete NO\", 0)\n  " +
+            //      "  }\n         " +
+
+            "         parameter(\"\", \"DetetedPlates_F2\", string, text, 340, 240, 100)\n  " +
+
 
              //bolt
              "   attribute(\"\", \"Bolt Standard\", label, \"%s\", none, none, \"0\", \"0\", 40, 380)\n     " +

@@ -35,6 +35,7 @@ namespace sag_rod_plugin_app
             this.cb_plate4 = new System.Windows.Forms.ComboBox();
             this.cb_plate3 = new System.Windows.Forms.ComboBox();
             this.cb_sinleordouble = new System.Windows.Forms.ComboBox();
+            this.tx_spacings = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // button1
@@ -102,11 +103,20 @@ namespace sag_rod_plugin_app
             this.cb_sinleordouble.Size = new System.Drawing.Size(121, 21);
             this.cb_sinleordouble.TabIndex = 2;
             // 
+            // tx_spacings
+            // 
+            this.tx_spacings.Location = new System.Drawing.Point(53, 164);
+            this.tx_spacings.Name = "tx_spacings";
+            this.tx_spacings.Size = new System.Drawing.Size(259, 20);
+            this.tx_spacings.TabIndex = 3;
+            this.tx_spacings.Text = "70 50 60 20";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(334, 153);
+            this.ClientSize = new System.Drawing.Size(339, 257);
+            this.Controls.Add(this.tx_spacings);
             this.Controls.Add(this.cb_sinleordouble);
             this.Controls.Add(this.cb_plate3);
             this.Controls.Add(this.cb_plate4);
@@ -116,6 +126,7 @@ namespace sag_rod_plugin_app
             this.Name = "Form1";
             this.Text = "Form1";
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -127,6 +138,7 @@ namespace sag_rod_plugin_app
         private System.Windows.Forms.ComboBox cb_plate4;
         private System.Windows.Forms.ComboBox cb_plate3;
         private System.Windows.Forms.ComboBox cb_sinleordouble;
+        private System.Windows.Forms.TextBox tx_spacings;
     }
 }
 
